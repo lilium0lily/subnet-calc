@@ -1,0 +1,18 @@
+{
+  "name": "subnet-calc",
+  "version": "1.0.0",
+  "description": "子网掩码计算器 - iOS App",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo 'No build step needed - static HTML'",
+    "ios": "npx cap sync ios && npx cap open ios",
+    "ios:update": "npx cap sync ios"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/ios": "^6.0.0",
+    "typescript": "^6.0.3"
+  },
+  "author": "",
+  "license": "MIT"
+}

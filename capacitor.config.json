@@ -1,0 +1,14 @@
+﻿{
+  "appId": "com.subnetcalc.app",
+  "appName": "子网掩码计算器",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "iosScheme": "subnetcalc"
+  },
+  "ios": {
+    "contentInset": "always",
+    "scheme": "SubnetCalc",
+    "backgroundColor": "#f0f2f5"
+  }
+}

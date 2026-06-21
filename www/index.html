@@ -1,0 +1,777 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="子网计算器">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#1a73e8">
+<title>子网掩码计算器</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+<style>
+:root {
+  --bg: #f0f2f5;
+  --card: #fff;
+  --primary: #1a73e8;
+  --primary-dark: #1557b0;
+  --text: #1f1f1f;
+  --text-secondary: #5f6368;
+  --border: #e0e0e0;
+  --accent: #0d904f;
+  --danger: #d93025;
+  --input-bg: #f8f9fa;
+  --radius: 14px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --safe-bottom: env(safe-area-inset-bottom, 16px);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { height:100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  -webkit-user-select: none;
+  user-select: none;
+  overscroll-behavior: none;
+}
+
+/* === HEADER === */
+.app-header {
+  background: linear-gradient(135deg, #1a73e8 0%, #4285f4 100%);
+  color: #fff;
+  padding: 16px 16px 18px;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2px 12px rgba(26,115,232,0.25);
+  -webkit-backdrop-filter: blur(10px);
+}
+.app-header h1 { font-size: 1.3rem; font-weight: 600; letter-spacing: 0.3px; }
+.app-header p { font-size: 0.75rem; opacity: 0.8; margin-top: 2px; }
+
+/* === INSTALL BANNER === */
+.install-banner {
+  display: none;
+  background: #e8f0fe;
+  border: 1px solid #a8c7fa;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin: 12px 12px 0;
+  align-items: center;
+  gap: 10px;
+  animation: slideDown 0.3s ease;
+}
+@keyframes slideDown {
+  from { opacity:0; transform:translateY(-10px); }
+  to { opacity:1; transform:translateY(0); }
+}
+.install-banner .ib-icon { font-size: 1.8rem; }
+.install-banner .ib-text { flex:1; font-size: 0.85rem; font-weight: 500; }
+.install-banner .ib-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.install-banner .ib-close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* === MAIN CONTAINER === */
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 10px 12px;
+  padding-bottom: var(--safe-bottom);
+}
+
+/* === CARDS === */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.2s;
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.card-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.card-title::before {
+  content:"";
+  display:inline-block;
+  width:3px; height:14px;
+  background:var(--primary);
+  border-radius:2px;
+}
+
+/* === IP INPUT === */
+.ip-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.ip-input {
+  width: 50px;
+  height: 42px;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: var(--input-bg);
+  color: var(--text);
+  outline: none;
+  -webkit-appearance: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.ip-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(26,115,232,0.1);
+}
+.ip-dot {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  user-select: none;
+  width: 8px;
+  text-align: center;
+}
+.cidr-input {
+  width: 50px;
+  height: 42px;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  border: 1.5px solid var(--primary);
+  border-radius: 10px;
+  background: #e8f0fe;
+  color: var(--primary);
+  outline: none;
+  -webkit-appearance: none;
+}
+.cidr-slash {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--primary);
+  user-select: none;
+  margin: 0 2px;
+}
+
+/* === PRESET CHIPS === */
+.chips {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  justify-content: center;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: var(--card);
+  font-size: 0.68rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+.chip:active, .chip.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  transform: scale(0.96);
+}
+
+/* === BADGE === */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color:#fff;
+  letter-spacing: 0.3px;
+}
+.badge-a { background:#1a73e8; }
+.badge-b { background:#0d904f; }
+.badge-c { background:#e37400; }
+.badge-d { background:#9334e6; }
+.badge-e { background:#d93025; }
+
+/* === BUTTONS === */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s;
+  -webkit-appearance: none;
+  gap: 5px;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background:var(--primary); color:#fff; flex:1; }
+.btn-primary:active { background:var(--primary-dark); }
+.btn-outline { background:transparent; color:var(--primary); border:1.5px solid var(--primary); }
+.btn-outline:active { background:#e8f0fe; }
+.btn-sm { height:30px; padding:0 12px; font-size:0.75rem; border-radius:8px; }
+.btn-icon { width:38px; padding:0; border-radius:50%; }
+
+/* === RESULTS === */
+.result-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.result-item {
+  background: var(--input-bg);
+  border-radius: 10px;
+  padding: 10px 12px;
+  transition: background 0.15s;
+}
+.result-item:active { background: #e8eaed; }
+.result-item.full { grid-column: 1 / -1; }
+.result-label {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.result-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  word-break: break-all;
+}
+.result-value.mono {
+  font-family: "SF Mono","Cascadia Code","Consolas",monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.8px;
+}
+.mask-net { color: #1a73e8; }
+.mask-host { color: #d93025; }
+
+/* === DETAIL TABLE === */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 8px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.7rem;
+}
+th, td {
+  padding: 7px 5px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+th {
+  background: var(--input-bg);
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.65rem;
+  position: sticky;
+  top: 0;
+}
+td { font-family: "SF Mono","Cascadia Code","Consolas",monospace; font-size: 0.68rem; }
+td:first-child { font-family: -apple-system,sans-serif; font-weight: 600; text-align: left; }
+
+/* === SPLIT === */
+.split-result {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.split-result b { color: var(--primary); }
+
+/* === TOAST === */
+.toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; }
+
+/* === OFFLINE INDICATOR === */
+.offline-badge {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  background: #fce8e6;
+  color: #c5221f;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+.offline-badge.show { display: inline-flex; }
+
+/* === UTILS === */
+.flex-1 { flex:1; }
+.mt6 { margin-top:6px; }
+.mt8 { margin-top:8px; }
+.mt10 { margin-top:10px; }
+.gap6 { gap:6px; }
+.gap8 { gap:8px; }
+.text-sm { font-size:0.73rem; }
+.text-muted { color:var(--text-secondary); }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <h1>🌐 子网掩码计算器</h1>
+  <p>TCP/IP 子网掩码计算与换算 <span class="offline-badge" id="offlineBadge">📡 离线</span></p>
+</div>
+
+<div class="install-banner" id="installBanner">
+  <span class="ib-icon">📲</span>
+  <span class="ib-text">添加到主屏幕，像 App 一样使用</span>
+  <button class="ib-btn" id="installBtn">安装</button>
+  <button class="ib-close" onclick="dismissInstall()">✕</button>
+</div>
+
+<div class="container">
+
+  <!-- IP & CIDR Card -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">IP 地址 & 掩码</div>
+      <div id="classBadge"></div>
+    </div>
+    <div class="ip-row">
+      <input type="number" class="ip-input" id="ip1" value="192" min="0" max="255" inputmode="numeric" oninput="autoCalc()" onfocus="this.select()">
+      <span class="ip-dot">·</span>
+      <input type="number" class="ip-input" id="ip2" value="168" min="0" max="255" inputmode="numeric" oninput="autoCalc()" onfocus="this.select()">
+      <span class="ip-dot">·</span>
+      <input type="number" class="ip-input" id="ip3" value="1" min="0" max="255" inputmode="numeric" oninput="autoCalc()" onfocus="this.select()">
+      <span class="ip-dot">·</span>
+      <input type="number" class="ip-input" id="ip4" value="100" min="0" max="255" inputmode="numeric" oninput="autoCalc()" onfocus="this.select()">
+      <span class="cidr-slash">/</span>
+      <input type="number" class="cidr-input" id="cidr" value="24" min="0" max="32" inputmode="numeric" oninput="autoCalc()" onfocus="this.select()">
+    </div>
+    <div class="chips">
+      <span class="chip" onclick="setCidr(8)">/8</span>
+      <span class="chip" onclick="setCidr(12)">/12</span>
+      <span class="chip" onclick="setCidr(16)">/16</span>
+      <span class="chip" onclick="setCidr(20)">/20</span>
+      <span class="chip" onclick="setCidr(24)">/24</span>
+      <span class="chip" onclick="setCidr(25)">/25</span>
+      <span class="chip" onclick="setCidr(26)">/26</span>
+      <span class="chip" onclick="setCidr(27)">/27</span>
+      <span class="chip" onclick="setCidr(28)">/28</span>
+      <span class="chip" onclick="setCidr(29)">/29</span>
+      <span class="chip" onclick="setCidr(30)">/30</span>
+      <span class="chip" onclick="setCidr(32)">/32</span>
+    </div>
+  </div>
+
+  <!-- Results Card -->
+  <div class="card" id="resultCard">
+    <div class="card-header">
+      <div class="card-title">计算结果</div>
+      <button class="btn btn-outline btn-sm" id="bClsBtn" onclick="toggleBinary()">📋 隐藏详情</button>
+    </div>
+    <div class="result-grid">
+      <div class="result-item">
+        <div class="result-label">网络地址</div>
+        <div class="result-value" id="netAddr">-</div>
+      </div>
+      <div class="result-item">
+        <div class="result-label">广播地址</div>
+        <div class="result-value" id="bcastAddr">-</div>
+      </div>
+      <div class="result-item">
+        <div class="result-label">可用 IP 范围</div>
+        <div class="result-value" style="font-size:0.78rem;" id="hostRange">-</div>
+      </div>
+      <div class="result-item">
+        <div class="result-label">可用主机数</div>
+        <div class="result-value" id="hostCount">-</div>
+      </div>
+      <div class="result-item">
+        <div class="result-label">子网掩码</div>
+        <div class="result-value" id="subnetMask">-</div>
+      </div>
+      <div class="result-item">
+        <div class="result-label">反掩码 (Wildcard)</div>
+        <div class="result-value" id="wildcard">-</div>
+      </div>
+      <div class="result-item full">
+        <div class="result-label">二进制子网掩码</div>
+        <div class="result-value mono" id="maskBinary">-</div>
+      </div>
+      <div class="result-item full" id="hexRow">
+        <div class="result-label">十六进制</div>
+        <div class="result-value mono" id="maskHex">-</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail Table Card -->
+  <div class="card" id="detailTable">
+    <div class="card-header">
+      <div class="card-title">地址详情</div>
+      <span class="text-sm text-muted">DEC / BIN / HEX</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th>十进制</th><th>二进制</th><th>十六进制</th></tr></thead>
+        <tbody>
+          <tr><td><b>IP 地址</b></td><td id="tIpDec">-</td><td id="tIpBin" style="font-size:0.62rem;">-</td><td id="tIpHex">-</td></tr>
+          <tr><td><b>子网掩码</b></td><td id="tMaskDec">-</td><td id="tMaskBin" style="font-size:0.62rem;">-</td><td id="tMaskHex">-</td></tr>
+          <tr><td><b>网络地址</b></td><td id="tNetDec">-</td><td id="tNetBin" style="font-size:0.62rem;">-</td><td id="tNetHex">-</td></tr>
+          <tr><td><b>广播地址</b></td><td id="tBcastDec">-</td><td id="tBcastBin" style="font-size:0.62rem;">-</td><td id="tBcastHex">-</td></tr>
+          <tr><td><b>首可用IP</b></td><td id="tFirstDec">-</td><td id="tFirstBin" style="font-size:0.62rem;">-</td><td id="tFirstHex">-</td></tr>
+          <tr><td><b>末可用IP</b></td><td id="tLastDec">-</td><td id="tLastBin" style="font-size:0.62rem;">-</td><td id="tLastHex">-</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Subnet Split Card -->
+  <div class="card" id="splitCard">
+    <div class="card-header">
+      <div class="card-title">子网划分</div>
+      <button class="btn btn-outline btn-sm" onclick="resetAll()">🔄 重置</button>
+    </div>
+    <div class="ip-row">
+      <span class="text-sm">新掩码位:</span>
+      <input type="number" class="cidr-input" id="subCidr" value="26" min="0" max="32" inputmode="numeric" oninput="calcSplit()" style="width:44px;height:36px;font-size:0.85rem;">
+      <span class="cidr-slash">/</span>
+      <span class="text-sm text-muted">主机/子网</span>
+    </div>
+    <div class="split-result" id="splitInfo"></div>
+    <div class="table-wrap mt8" id="splitTableWrap" style="display:none;">
+      <table><thead><tr><th>#</th><th>网络地址</th><th>可用范围</th><th>广播</th></tr></thead>
+      <tbody id="splitTableBody"></tbody></table>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+// === DOM helpers ===
+const $ = id => document.getElementById(id);
+const E = (tag, attrs, ...children) => {
+  const el = document.createElement(tag);
+  if (attrs) Object.entries(attrs).forEach(([k,v]) => {
+    if (k === "style" && typeof v === "object") Object.assign(el.style, v);
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2).toLowerCase(), v);
+    else el[k] = v;
+  });
+  children.forEach(c => el.append(typeof c === "string" ? document.createTextNode(c) : c));
+  return el;
+};
+
+// === Subnet calculation core ===
+function ipToInt(a,b,c,d) {
+  return ((+a & 0xff) << 24) | ((+b & 0xff) << 16) | ((+c & 0xff) << 8) | (+d & 0xff);
+}
+function intToIp(n) {
+  return [(n>>>24)&0xff, (n>>>16)&0xff, (n>>>8)&0xff, n&0xff].join(".");
+}
+function intToArr(n) {
+  return [(n>>>24)&0xff, (n>>>16)&0xff, (n>>>8)&0xff, n&0xff];
+}
+function cidrToMask(cidr) {
+  if (cidr <= 0) return 0;
+  if (cidr >= 32) return 0xffffffff;
+  return (~0) << (32 - cidr);
+}
+function getClass(ip) {
+  const first = (ip >>> 24) & 0xff;
+  if (first < 128) return {name:"A类", badge:"badge-a", defaultMask:8};
+  if (first < 192) return {name:"B类", badge:"badge-b", defaultMask:16};
+  if (first < 224) return {name:"C类", badge:"badge-c", defaultMask:24};
+  if (first < 240) return {name:"D类 组播", badge:"badge-d", defaultMask:0};
+  return {name:"E类 保留", badge:"badge-e", defaultMask:0};
+}
+function toBin(n) { return n.toString(2).padStart(8,"0"); }
+function toHex(n) { return n.toString(16).padStart(2,"0").toUpperCase(); }
+function fmtIp(ipInt, fn) {
+  return intToArr(ipInt).map(fn).join(".");
+}
+
+let showBinary = false;
+
+// === Main calculation ===
+function autoCalc() {
+  const ip1 = Math.min(255, Math.max(0, +$("ip1").value || 0));
+  const ip2 = Math.min(255, Math.max(0, +$("ip2").value || 0));
+  const ip3 = Math.min(255, Math.max(0, +$("ip3").value || 0));
+  const ip4 = Math.min(255, Math.max(0, +$("ip4").value || 0));
+  const cidr = Math.min(32, Math.max(0, +$("cidr").value || 0));
+  const ipInt = ipToInt(ip1,ip2,ip3,ip4);
+  const cls = getClass(ipInt);
+
+  // Clamp input values
+  $("ip1").value = ip1; $("ip2").value = ip2;
+  $("ip3").value = ip3; $("ip4").value = ip4;
+  $("cidr").value = cidr;
+
+  // Class badge
+  $("classBadge").innerHTML = '<span class="badge '+cls.badge+'">'+cls.name+'</span>';
+
+  const maskInt = cidrToMask(cidr);
+  const wildInt = (~maskInt) >>> 0;
+  const netInt = (ipInt & maskInt) >>> 0;
+  const bcastInt = cidr >= 31 ? netInt : (netInt | wildInt);
+  const mArr = intToArr(maskInt);
+
+  // Fill results
+  $("netAddr").textContent = intToIp(netInt);
+  $("bcastAddr").textContent = intToIp(bcastInt);
+  $("subnetMask").textContent = intToIp(maskInt);
+
+  if (cidr >= 31) {
+    $("hostRange").textContent = cidr === 32 ? "单主机地址" : "点对点链路";
+    $("hostCount").textContent = cidr === 32 ? "1" : "2";
+    $("wildcard").textContent = cidr === 32 ? "0.0.0.0" : intToIp(wildInt);
+  } else {
+    const hostNum = (1 << (32 - cidr)) - 2;
+    $("hostRange").textContent = intToIp(netInt + 1) + " ~ " + intToIp(bcastInt - 1);
+    $("hostCount").textContent = hostNum.toLocaleString();
+    $("wildcard").textContent = intToIp(wildInt);
+  }
+
+  // Binary mask with color
+  $("maskBinary").innerHTML = mArr.map((o,i) => {
+    const b = toBin(o);
+    const split = Math.min(8, Math.max(0, cidr - i*8));
+    return '<span class="mask-net">'+b.substring(0,split)+'</span><span class="mask-host">'+b.substring(split)+'</span>';
+  }).join(".");
+
+  $("maskHex").textContent = fmtIp(maskInt, toHex);
+
+  // Detail table
+  const fillRow = (decId, binId, hexId, val) => {
+    $(decId).textContent = intToIp(val);
+    $(binId).textContent = fmtIp(val, toBin);
+    $(hexId).textContent = fmtIp(val, toHex);
+  };
+
+  fillRow("tIpDec","tIpBin","tIpHex", ipInt);
+  fillRow("tMaskDec","tMaskBin","tMaskHex", maskInt);
+  fillRow("tNetDec","tNetBin","tNetHex", netInt);
+  fillRow("tBcastDec","tBcastBin","tBcastHex", bcastInt);
+
+  if (cidr >= 31) {
+    ["tFirstDec","tFirstBin","tFirstHex","tLastDec","tLastBin","tLastHex"].forEach(id => $(id).textContent = "-");
+  } else {
+    fillRow("tFirstDec","tFirstBin","tFirstHex", netInt + 1);
+    fillRow("tLastDec","tLastBin","tLastHex", bcastInt - 1);
+  }
+
+  // Hex row toggle
+  $("hexRow").style.display = "";
+
+  // Highlight active chip
+  document.querySelectorAll(".chip").forEach(b => b.classList.remove("active"));
+  const activeChip = document.querySelector('.chip[onclick="setCidr('+cidr+')"]');
+  if (activeChip) activeChip.classList.add("active");
+
+  // Detail table visibility
+  $("detailTable").style.display = showBinary ? "none" : "";
+
+  calcSplit();
+}
+
+function setCidr(v) {
+  $("cidr").value = v;
+  autoCalc();
+}
+
+function resetAll() {
+  $("ip1").value = 192; $("ip2").value = 168;
+  $("ip3").value = 1; $("ip4").value = 100;
+  $("cidr").value = 24;
+  showBinary = false;
+  $("detailTable").style.display = "";
+  $("bClsBtn").innerHTML = "📋 隐藏详情";
+  autoCalc();
+  showToast("已重置");
+}
+
+function toggleBinary() {
+  showBinary = !showBinary;
+  if (showBinary) {
+    $("detailTable").style.display = "none";
+    $("bClsBtn").innerHTML = "📋 显示详情";
+  } else {
+    $("detailTable").style.display = "";
+    $("bClsBtn").innerHTML = "📋 隐藏详情";
+  }
+}
+
+function calcSplit() {
+  const ip1 = +$("ip1").value || 0;
+  const ip2 = +$("ip2").value || 0;
+  const ip3 = +$("ip3").value || 0;
+  const ip4 = +$("ip4").value || 0;
+  const cidr = +$("cidr").value || 24;
+  const subCidr = +$("subCidr").value || 26;
+  const ipInt = ipToInt(ip1,ip2,ip3,ip4);
+  const maskInt = cidrToMask(cidr);
+  const netInt = (ipInt & maskInt) >>> 0;
+  const tbody = $("splitTableBody");
+  const wrap = $("splitTableWrap");
+  const info = $("splitInfo");
+
+  if (subCidr <= cidr || subCidr > 32) {
+    info.innerHTML = '⚠ 新掩码位需 &gt; <b>'+cidr+'</b>，且 ≤ 32';
+    wrap.style.display = "none";
+    return;
+  }
+
+  const subnetCount = 1 << (subCidr - cidr);
+  const hostsPer = subCidr >= 32 ? 1 : (subCidr === 31 ? 2 : (1 << (32 - subCidr)) - 2);
+  const step = 1 << (32 - subCidr);
+
+  info.innerHTML = '划分 <b>'+subnetCount.toLocaleString()+'</b> 个子网，每个 <b>'+hostsPer.toLocaleString()+'</b> 个可用主机，步长 <b>'+step+'</b>';
+
+  let html = "";
+  const maxShow = Math.min(subnetCount, 64);
+  for (let i = 0; i < maxShow; i++) {
+    const sn = netInt + i * step;
+    const sb = sn + step - 1;
+    html += "<tr><td>"+(i+1)+"</td><td>"+intToIp(sn)+"</td>";
+    if (subCidr >= 31) {
+      html += "<td>-</td>";
+    } else {
+      html += "<td>"+intToIp(sn+1)+" ~ "+intToIp(sb-1)+"</td>";
+    }
+    html += "<td>"+intToIp(sb)+"</td></tr>";
+  }
+  if (subnetCount > 64) {
+    html += '<tr><td colspan="4" class="text-muted text-sm">仅显示前64个 (共'+subnetCount.toLocaleString()+'个)</td></tr>';
+  }
+  tbody.innerHTML = html;
+  wrap.style.display = "";
+}
+
+// === Toast ===
+function showToast(msg) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove("show"), 1800);
+}
+
+// === PWA Install ===
+let deferredPrompt = null;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  $("installBanner").style.display = "flex";
+});
+
+$("installBtn").addEventListener("click", async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  if (outcome === "accepted") {
+    $("installBanner").style.display = "none";
+    showToast("✅ 已添加到桌面");
+  }
+  deferredPrompt = null;
+});
+
+function dismissInstall() {
+  $("installBanner").style.display = "none";
+}
+
+// === Online/Offline detection ===
+function updateOnlineStatus() {
+  const badge = $("offlineBadge");
+  if (navigator.onLine) {
+    badge.classList.remove("show");
+  } else {
+    badge.classList.add("show");
+  }
+}
+window.addEventListener("online", updateOnlineStatus);
+window.addEventListener("offline", updateOnlineStatus);
+updateOnlineStatus();
+
+// === Prevent zoom on double-tap ===
+document.addEventListener("dblclick", e => e.preventDefault(), {passive:false});
+
+// === Init ===
+autoCalc();
+</script>
+
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
