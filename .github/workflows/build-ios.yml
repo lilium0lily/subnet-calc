@@ -60,5 +60,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: subnet-calc.ipa
-          path: ios/App/subnet-calc.ipa
+          path: ios/subnet-calc.ipa
           if-no-files-found: error
